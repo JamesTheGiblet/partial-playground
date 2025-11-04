@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Particle Physics Playground Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--bg-start), var(--bg-mid), var(--bg-end));
+            overflow: hidden;
+            height: 100vh;
+            transition: background 0.5s ease;
+        }
+
+        body.cosmic {
+            --bg-start: #0f0c29;
+            --bg-mid: #302b63;
+            --bg-end: #24243e;
+            --primary: #667eea;
+            --secondary: #764ba2;
+        }
+
+        body.neon {
+            --bg-start: #000000;
+            --bg-mid: #1a001a;
+            --bg-end: #0d0d0d;
+            --primary: #39ff14;
+            --secondary: #ff00ff;
+        }
+
+        body.ocean {
+            --bg-start: #001f3f;
+            --bg-mid: #003d5c;
+            --bg-end: #0074a6;
+            --primary: #00d2ff;
+            --secondary: #3a7bd5;
+        }
+
+        body.sunset {
+            --bg-start: #2c1a4d;
+            --bg-mid: #7b2869;
+            --bg-end: #ff6b35;
+            --primary: #ff6b35;
+            --secondary: #f7931e;
+        }
+
+        #canvas {
+            display: block;
+            width: 100%;
+            height: 100vh;
+            cursor: crosshair;
+        }
+
+        .controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            color: white;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            max-width: 320px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .controls::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .controls::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .controls::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        h1 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-title {
+            font-size: 0.9em;
+            color: #aaa;
+            margin: 15px 0 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .mode-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 2px solid transparent;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        button.active {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border-color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .theme-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .theme-btn {
+            padding: 8px;
+            font-size: 20px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .slider-group {
+            margin-bottom: 12px;
+        }
+
+        .slider-group label {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 5px;
+            color: #aaa;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .value-display {
+            display: inline-block;
+            float: right;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .action-buttons button {
+            flex: 1;
+        }
+
+        .info {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            font-size: 11px;
+            line-height: 1.5;
+            color: #bbb;
+        }
+
+        .stats {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            font-size: 12px;
+            z-index: 1000;
+            min-width: 150px;
+        }
+
+        .stats div {
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .stats .label {
+            color: #aaa;
+        }
+
+        .stats .value {
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.2); }
+        }
+
+        .help-toggle {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+
+        .help-toggle:hover {
+            transform: scale(1.1) rotate(90deg);
+        }
+
+        .help-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 30px;
+            border-radius: 20px;
+            color: white;
+            z-index: 10001;
+            max-width: 500px;
+            display: none;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .help-panel.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        .help-panel h2 {
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .help-panel table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .help-panel td {
+            padding: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .help-panel td:first-child {
+            color: var(--primary);
+            font-weight: bold;
+            width: 80px;
+        }
+
+        .close-help {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body class="cosmic">
+    <canvas id="canvas"></canvas>
+
+    <div class="controls">
+        <h1>⚛️ Particle Playground Pro</h1>
+        
+        <div class="section-title">🎨 Themes</div>
+        <div class="theme-buttons">
+            <button class="theme-btn active" data-theme="cosmic">🌌</button>
+            <button class="theme-btn" data-theme="neon">💚</button>
+            <button class="theme-btn" data-theme="ocean">🌊</button>
+            <button class="theme-btn" data-theme="sunset">🌅</button>
+        </div>
+
+        <div class="section-title">🎮 Physics Modes</div>
+        <div class="mode-buttons">
+            <button class="mode-btn active" data-mode="gravity">🌌 Gravity</button>
+            <button class="mode-btn" data-mode="fireworks">🎆 Fireworks</button>
+            <button class="mode-btn" data-mode="wave">🌊 Waves</button>
+            <button class="mode-btn" data-mode="chain">⛓️ Chain</button>
+            <button class="mode-btn" data-mode="orbit">🪐 Orbit</button>
+            <button class="mode-btn" data-mode="attract">🧲 Attract</button>
+        </div>
+
+        <div class="section-title">⚙️ Parameters</div>
+        <div class="slider-group">
+            <label>Particles <span class="value-display" id="countDisplay">50</span></label>
+            <input type="range" id="particleCount" min="10" max="200" value="50">
+        </div>
+
+        <div class="slider-group">
+            <label>Gravity <span class="value-display" id="gravityDisplay">0.5</span></label>
+            <input type="range" id="gravity" min="0" max="20" step="0.1" value="5">
+        </div>
+
+        <div class="slider-group">
+            <label>Speed <span class="value-display" id="speedDisplay">1.0</span></label>
+            <input type="range" id="speed" min="0.1" max="3" step="0.1" value="1">
+        </div>
+
+        <div class="slider-group">
+            <label>Trail Length <span class="value-display" id="trailDisplay">10</span></label>
+            <input type="range" id="trail" min="0" max="30" value="10">
+        </div>
+
+        <div class="action-buttons">
+            <button id="clearBtn" style="background: rgba(231, 76, 60, 0.3);">Clear</button>
+            <button id="pauseBtn" style="background: rgba(52, 152, 219, 0.3);">Pause</button>
+            <button id="soundBtn" style="background: rgba(46, 204, 113, 0.3);">🔊 Sound</button>
+        </div>
+
+        <div class="info" id="modeInfo">
+            Click and drag to create a gravity well that attracts particles!
+        </div>
+
+        <div class="info" style="margin-top: 10px; font-size: 10px;">
+            <strong>⌨️ Shortcuts:</strong><br>
+            SPACE = Pause | C = Clear<br>
+            F = Fullscreen | S = Sound<br>
+            1-6 = Switch modes | ? = Help
+        </div>
+    </div>
+
+    <div class="stats">
+        <div><span class="label">FPS:</span> <span class="value" id="fps">60</span></div>
+        <div><span class="label">Particles:</span> <span class="value" id="particleStats">0</span></div>
+        <div><span class="label">Mode:</span> <span class="value" id="modeStats">Gravity</span></div>
+        <div><span class="label">Theme:</span> <span class="value" id="themeStats">Cosmic</span></div>
+    </div>
+
+    <button class="help-toggle" id="helpToggle">?</button>
+
+    <div class="help-panel" id="helpPanel">
+        <h2>⌨️ Keyboard Shortcuts</h2>
+        <table>
+            <tr><td>SPACE</td><td>Pause / Resume</td></tr>
+            <tr><td>C</td><td>Clear all particles</td></tr>
+            <tr><td>F</td><td>Toggle fullscreen</td></tr>
+            <tr><td>S</td><td>Toggle sound effects</td></tr>
+            <tr><td>1-6</td><td>Switch physics modes</td></tr>
+            <tr><td>?</td><td>Show this help</td></tr>
+        </table>
+        <h2>🎮 Mode Descriptions</h2>
+        <table>
+            <tr><td>🌌</td><td>Gravity - Click & drag to attract</td></tr>
+            <tr><td>🎆</td><td>Fireworks - Click for explosions</td></tr>
+            <tr><td>🌊</td><td>Waves - Flowing sine patterns</td></tr>
+            <tr><td>⛓️</td><td>Chain - Particles connect nearby</td></tr>
+            <tr><td>🪐</td><td>Orbit - Particles orbit cursor</td></tr>
+            <tr><td>🧲</td><td>Attract - Left-click attracts</td></tr>
+        </table>
+        <button class="close-help">Got it!</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let particles = [];
+        let mode = 'gravity';
+        let theme = 'cosmic';
+        let mouseX = 0;
+        let mouseY = 0;
+        let isMouseDown = false;
+        let isPaused = false;
+        let gravityStrength = 0.5;
+        let speedMultiplier = 1;
+        let targetParticleCount = 50;
+        let trailLength = 10;
+
+        // Audio context for sound effects
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(frequency, duration, type = 'sine') {
+            if (!soundEnabled || !audioCtx) return;
+            
+            try {
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.type = type;
+                oscillator.frequency.value = frequency;
+                gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                // Silently fail if audio not supported
+            }
+        }
+
+        // FPS tracking
+        let lastTime = performance.now();
+        let fps = 60;
+        let frameCount = 0;
+
+        // Mode descriptions
+        const modeInfo = {
+            gravity: 'Click and drag to create a gravity well that attracts particles!',
+            fireworks: 'Click anywhere to launch colorful firework explosions!',
+            wave: 'Watch particles flow in mesmerizing wave patterns!',
+            chain: 'Particles connect in chains when they get close together!',
+            orbit: 'Particles orbit around your cursor like planets!',
+            attract: 'Click to attract particles, right-click to repel them!'
+        };
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 4;
+                this.radius = Math.random() * 3 + 2;
+                this.hue = Math.random() * 360;
+                this.life = 1;
+                this.decay = Math.random() * 0.01 + 0.005;
+                this.trailLength = trailLength;
+                this.trail = [];
+            }
+
+            update() {
+                this.trailLength = trailLength;
+                
+                // Store trail
+                if (trailLength > 0) {
+                    this.trail.push({x: this.x, y: this.y});
+                    if (this.trail.length > this.trailLength) {
+                        this.trail.shift();
+                    }
+                } else {
+                    this.trail = [];
+                }
+
+                switch(mode) {
+                    case 'gravity':
+                        if (isMouseDown) {
+                            const dx = mouseX - this.x;
+                            const dy = mouseY - this.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            const force = (gravityStrength * 100) / (dist + 10);
+                            this.vx += (dx / dist) * force * 0.1;
+                            this.vy += (dy / dist) * force * 0.1;
+                        }
+                        this.vy += 0.1; // Global gravity
+                        break;
+
+                    case 'fireworks':
+                        this.vy += 0.2;
+                        this.life -= this.decay;
+                        break;
+
+                    case 'wave':
+                        this.x += Math.sin(Date.now() * 0.001 + this.y * 0.01) * 2;
+                        this.y += speedMultiplier;
+                        if (this.y > canvas.height) this.y = 0;
+                        break;
+
+                    case 'chain':
+                        // Brownian motion
+                        this.vx += (Math.random() - 0.5) * 0.5;
+                        this.vy += (Math.random() - 0.5) * 0.5;
+                        break;
+
+                    case 'orbit':
+                        const dx = mouseX - this.x;
+                        const dy = mouseY - this.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx);
+                        this.vx = -Math.sin(angle) * gravityStrength;
+                        this.vy = Math.cos(angle) * gravityStrength;
+                        break;
+
+                    case 'attract':
+                        if (isMouseDown) {
+                            const dx = mouseX - this.x;
+                            const dy = mouseY - this.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            const force = (gravityStrength * 50) / (dist + 10);
+                            this.vx += (dx / dist) * force * 0.2;
+                            this.vy += (dy / dist) * force * 0.2;
+                        }
+                        break;
+                }
+
+                // Apply velocity
+                this.x += this.vx * speedMultiplier;
+                this.y += this.vy * speedMultiplier;
+
+                // Damping
+                this.vx *= 0.99;
+                this.vy *= 0.99;
+
+                // Bounce off edges
+                if (this.x < 0 || this.x > canvas.width) {
+                    this.vx *= -0.8;
+                    this.x = Math.max(0, Math.min(canvas.width, this.x));
+                }
+                if (this.y < 0 || this.y > canvas.height) {
+                    this.vy *= -0.8;
+                    this.y = Math.max(0, Math.min(canvas.height, this.y));
+                }
+
+                return mode === 'fireworks' ? this.life > 0 : true;
+            }
+
+            draw() {
+                // Draw trail
+                if (this.trail.length > 1) {
+                    ctx.strokeStyle = `hsla(${this.hue}, 100%, 50%, 0.3)`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    for (let i = 0; i < this.trail.length; i++) {
+                        const point = this.trail[i];
+                        if (i === 0) {
+                            ctx.moveTo(point.x, point.y);
+                        } else {
+                            ctx.lineTo(point.x, point.y);
+                        }
+                    }
+                    ctx.stroke();
+                }
+
+                // Draw particle
+                const grd = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+                grd.addColorStop(0, `hsla(${this.hue}, 100%, 70%, ${this.life})`);
+                grd.addColorStop(1, `hsla(${this.hue}, 100%, 50%, 0)`);
+                
+                ctx.fillStyle = grd;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < targetParticleCount; i++) {
+                particles.push(new Particle(
+                    Math.random() * canvas.width,
+                    Math.random() * canvas.height
+                ));
+            }
+        }
+
+        function createFirework(x, y) {
+            initAudio();
+            playSound(800 + Math.random() * 400, 0.3, 'sine');
+            
+            const count = 30;
+            for (let i = 0; i < count; i++) {
+                const angle = (Math.PI * 2 * i) / count;
+                const speed = Math.random() * 5 + 3;
+                const particle = new Particle(x, y);
+                particle.vx = Math.cos(angle) * speed;
+                particle.vy = Math.sin(angle) * speed;
+                particle.hue = Math.random() * 360;
+                particles.push(particle);
+            }
+        }
+
+        function drawConnections() {
+            if (mode !== 'chain') return;
+            
+            const maxConnectionsPerParticle = 5;
+            const maxDistance = 100;
+            
+            for (let i = 0; i < particles.length; i++) {
+                let connections = 0;
+                
+                for (let j = i + 1; j < particles.length && connections < maxConnectionsPerParticle; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < maxDistance) {
+                        const opacity = (1 - dist / maxDistance) * 0.5;
+                        ctx.strokeStyle = `rgba(102, 126, 234, ${opacity})`;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                        connections++;
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            if (!isPaused) {
+                // Semi-transparent background for trails
+                ctx.fillStyle = 'rgba(15, 12, 41, 0.1)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Update and draw particles
+                particles = particles.filter(p => p.update());
+                
+                drawConnections();
+                
+                particles.forEach(p => p.draw());
+
+                // Maintain particle count
+                while (particles.length < targetParticleCount && mode !== 'fireworks') {
+                    particles.push(new Particle(
+                        Math.random() * canvas.width,
+                        Math.random() * canvas.height
+                    ));
+                }
+
+                // Update FPS
+                frameCount++;
+                const currentTime = performance.now();
+                if (currentTime - lastTime >= 1000) {
+                    fps = frameCount;
+                    frameCount = 0;
+                    lastTime = currentTime;
+                    document.getElementById('fps').textContent = fps;
+                }
+
+                document.getElementById('particleStats').textContent = particles.length;
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Event Listeners
+        canvas.addEventListener('mousedown', (e) => {
+            isMouseDown = true;
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            if (mode === 'fireworks') {
+                createFirework(mouseX, mouseY);
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isMouseDown = false;
+        });
+
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            if (mode === 'attract') {
+                // Repel particles
+                particles.forEach(p => {
+                    const dx = p.x - mouseX;
+                    const dy = p.y - mouseY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 200) {
+                        const force = 10 / (dist + 1);
+                        p.vx += (dx / dist) * force;
+                        p.vy += (dy / dist) * force;
+                    }
+                });
+            }
+        });
+
+        // Mobile touch support
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            mouseX = touch.clientX;
+            mouseY = touch.clientY;
+            isMouseDown = true;
+            
+            if (mode === 'fireworks') {
+                createFirework(mouseX, mouseY);
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            mouseX = touch.clientX;
+            mouseY = touch.clientY;
+        });
+
+        canvas.addEventListener('touchend', () => {
+            isMouseDown = false;
+        });
+
+        // Theme buttons
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                theme = btn.dataset.theme;
+                document.body.className = theme;
+                document.getElementById('themeStats').textContent = theme.charAt(0).toUpperCase() + theme.slice(1);
+                playSound(300 + Math.random() * 200, 0.1, 'triangle');
+            });
+        });
+
+        // Mode buttons
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                mode = btn.dataset.mode;
+                document.getElementById('modeInfo').textContent = modeInfo[mode];
+                document.getElementById('modeStats').textContent = btn.textContent.split(' ')[1] || btn.textContent;
+                if (mode !== 'fireworks') {
+                    initParticles();
+                }
+                playSound(400 + Math.random() * 200, 0.1, 'square');
+            });
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Don't trigger if typing in an input
+            if (e.target.tagName === 'INPUT') return;
+            
+            switch(e.key) {
+                case ' ':
+                    e.preventDefault();
+                    document.getElementById('pauseBtn').click();
+                    break;
+                case 'c':
+                case 'C':
+                    document.getElementById('clearBtn').click();
+                    break;
+                case 'f':
+                case 'F':
+                    toggleFullscreen();
+                    break;
+                case 's':
+                case 'S':
+                    document.getElementById('soundBtn').click();
+                    break;
+                case '?':
+                    document.getElementById('helpToggle').click();
+                    break;
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                    const index = parseInt(e.key) - 1;
+                    const buttons = document.querySelectorAll('.mode-btn');
+                    if (buttons[index]) buttons[index].click();
+                    break;
+            }
+        });
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log('Fullscreen error:', err);
+                });
+                showNotification('⛶ Fullscreen Mode');
+            } else {
+                document.exitFullscreen();
+                showNotification('⛶ Normal Mode');
+            }
+        }
+
+        function showNotification(text) {
+            const notif = document.createElement('div');
+            notif.textContent = text;
+            notif.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0, 0, 0, 0.95);
+                color: white;
+                padding: 20px 40px;
+                border-radius: 10px;
+                font-size: 24px;
+                z-index: 10000;
+                animation: fadeOut 1.5s ease-out forwards;
+                backdrop-filter: blur(10px);
+                border: 2px solid var(--primary);
+            `;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 1500);
+        }
+
+        // Add CSS animation for notifications
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeOut {
+                0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+                100% { opacity: 0; transform: translate(-50%, -50%) scale(1.2); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Controls
+        document.getElementById('particleCount').addEventListener('input', (e) => {
+            targetParticleCount = parseInt(e.target.value);
+            document.getElementById('countDisplay').textContent = targetParticleCount;
+        });
+
+        document.getElementById('gravity').addEventListener('input', (e) => {
+            gravityStrength = parseFloat(e.target.value) / 10;
+            document.getElementById('gravityDisplay').textContent = gravityStrength.toFixed(1);
+        });
+
+        document.getElementById('speed').addEventListener('input', (e) => {
+            speedMultiplier = parseFloat(e.target.value);
+            document.getElementById('speedDisplay').textContent = speedMultiplier.toFixed(1);
+        });
+
+        document.getElementById('trail').addEventListener('input', (e) => {
+            trailLength = parseInt(e.target.value);
+            document.getElementById('trailDisplay').textContent = trailLength;
+        });
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            particles = [];
+            playSound(200, 0.2, 'sawtooth');
+        });
+
+        document.getElementById('pauseBtn').addEventListener('click', (e) => {
+            isPaused = !isPaused;
+            e.target.textContent = isPaused ? 'Resume' : 'Pause';
+            playSound(isPaused ? 300 : 500, 0.1, 'square');
+            showNotification(isPaused ? '⏸️ Paused' : '▶️ Playing');
+        });
+
+        document.getElementById('soundBtn').addEventListener('click', (e) => {
+            initAudio();
+            soundEnabled = !soundEnabled;
+            e.target.textContent = soundEnabled ? '🔊 Sound' : '🔇 Muted';
+            showNotification(soundEnabled ? '🔊 Sound ON' : '🔇 Sound OFF');
+            if (soundEnabled) playSound(440, 0.2, 'sine');
+        });
+
+        // Help panel
+        document.getElementById('helpToggle').addEventListener('click', () => {
+            document.getElementById('helpPanel').classList.toggle('show');
+        });
+
+        document.querySelector('.close-help').addEventListener('click', () => {
+            document.getElementById('helpPanel').classList.remove('show');
+        });
+
+        // Click outside help panel to close
+        document.getElementById('helpPanel').addEventListener('click', (e) => {
+            if (e.target.id === 'helpPanel') {
+                document.getElementById('helpPanel').classList.remove('show');
+            }
+        });
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Initialize
+        initParticles();
+        animate();
+        
+        // Show welcome notification
+        setTimeout(() => {
+            showNotification('🎨 Welcome to Particle Playground Pro!');
+        }, 500);
+    </script>
+</body>
+</html>
